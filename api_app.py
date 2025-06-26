@@ -1,37 +1,33 @@
 from fastapi import FastAPI, Request, UploadFile, File
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import shutil
+import pandas as pd
 from parser import load_data
-from analyzer import analyze_data
-from visualizer import generate_visualizations
-import os, shutil
+from visualizer import generate_charts
 
 app = FastAPI()
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
-async def homepage(request: Request):
+def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/upload/")
+@app.post("/upload", response_class=HTMLResponse)
 async def upload(request: Request, file: UploadFile = File(...)):
-    path = f"sample_data/{file.filename}"
-    with open(path, "wb") as buffer:
+    filepath = f"sample_data/{file.filename}"
+    with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    df = load_data(path)
-    insights = analyze_data(df)
-    generate_visualizations(df, insights)
+    df = load_data(filepath)
+    chart_info = generate_charts(df)
 
-    images = os.listdir("outputs")
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "images": images,
-        "message": "Charts generated successfully!"
+        "chart_info": chart_info,
+        "uploaded": True
     })
-
-@app.get("/chart/{name}")
-def get_image(name: str):
-    return FileResponse(f"outputs/{name}")
