@@ -68,3 +68,26 @@ button:hover {
   max-width: 100%;
   border-radius: 8px;
 }
+.logo {
+  width: 80px;
+  margin-bottom: 1rem;
+}
+
+.download_zip {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.download_zip:hover {
+  background-color: #2563eb;
+}
+
+p {
+  font-size: 1rem;
+  color: #4b5563;
+}
