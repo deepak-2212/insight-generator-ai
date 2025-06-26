@@ -91,3 +91,15 @@ p {
   font-size: 1rem;
   color: #4b5563;
 }
+.chart-card {
+  background-color: #f1f5f9;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .chart-card {
+  background-color: #334155;
+  color: #e2e8f0;
+}
