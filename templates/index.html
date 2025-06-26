@@ -4,8 +4,37 @@
   <meta charset="UTF-8" />
   <title>Insight Generator AI</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <style>
+  body.dark-mode {
+    background-color: #1e293b;
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .chart-card {
+    background-color: #334155;
+    box-shadow: none;
+  }
+
+  .dark-toggle {
+    margin-bottom: 1rem;
+  }
+
+  .dark-toggle input {
+    transform: scale(1.4);
+  }
+</style>
+
 </head>
 <body>
+  <img src="logo.png" alt="Logo" class="logo" />
+  <div class="dark-toggle">
+  <label>
+    <input type="checkbox" onchange="document.body.classList.toggle('dark-mode')" />
+    🌙 Dark Mode
+  </label>
+</div>
+
   <div class="container">
     <h1>📊 Insight Generator AI</h1>
     <p class="subtitle">Upload your dataset and get rich visual analytics instantly!</p>
@@ -14,9 +43,14 @@
       <input type="file" name="file" accept=".csv,.xlsx" required />
       <button type="submit">Generate Charts</button>
     </form>
+    <a href="/download_zip" target="_blank">
+  <button style="margin-top: 1rem;">📥 Download All Charts</button>
+</a>
+
 
     {% if uploaded %}
       <div class="charts">
+        <p><strong>Total charts generated:</strong> {{ view_count }}</p>
         {% for chart in chart_info %}
           <div class="chart-card">
             <h2>{{ chart.title }}</h2>
