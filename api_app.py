@@ -9,9 +9,6 @@ from visualizer import generate_charts
 import os
 import zipfile
 
-# Global chart view counter
-chart_view_count = 0
-
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -23,14 +20,11 @@ def index(request: Request):
     return templates.TemplateResponse("index.html", {
         "request": request,
         "uploaded": False,
-        "chart_info": [],
-        "view_count": chart_view_count
+        "chart_info": []
     })
 
 @app.post("/upload", response_class=HTMLResponse)
 async def upload(request: Request, file: UploadFile = File(...)):
-    global chart_view_count
-
     filepath = f"sample_data/{file.filename}"
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -38,14 +32,10 @@ async def upload(request: Request, file: UploadFile = File(...)):
     df = load_data(filepath)
     chart_info = generate_charts(df)
 
-    # Increment the global counter
-    chart_view_count += len(chart_info)
-
     return templates.TemplateResponse("index.html", {
         "request": request,
         "chart_info": chart_info,
-        "uploaded": True,
-        "view_count": chart_view_count
+        "uploaded": True
     })
 
 @app.get("/download_zip")
