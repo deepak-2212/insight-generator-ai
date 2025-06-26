@@ -8,19 +8,20 @@
 <body>
   <div class="container">
     <h1>📊 Insight Generator AI</h1>
+    <p class="subtitle">Upload your dataset and get rich visual analytics instantly!</p>
 
     <form method="post" enctype="multipart/form-data" action="/upload">
       <input type="file" name="file" accept=".csv,.xlsx" required />
-      <button type="submit">Generate Insights</button>
+      <button type="submit">Generate Charts</button>
     </form>
 
     {% if uploaded %}
       <div class="charts">
         {% for chart in chart_info %}
-          <div class="chart-block">
+          <div class="chart-card">
             <h2>{{ chart.title }}</h2>
-            <p>{{ chart.description }}</p>
             <img src="/outputs/{{ chart.filename }}" alt="{{ chart.title }}" />
+            <p>{{ chart.desc }}</p>
           </div>
         {% endfor %}
       </div>
