@@ -1,30 +1,30 @@
-from fastapi import FastAPI, Request, UploadFile, File
-from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import shutil
-import pandas as pd
-from parser import load_data
-from visualizer import generate_charts
 import os
 import zipfile
 
+from parser import load_data
+from visualizer import generate_charts
+
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
-templates = Jinja2Templates(directory="templates")
+# Allow CORS for your frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace * with your frontend domain later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "uploaded": False,
-        "chart_info": []
-    })
+@app.get("/health")
+def health():
+    return {"status": "Insight Generator AI is running ✅"}
 
-@app.post("/upload", response_class=HTMLResponse)
-async def upload(request: Request, file: UploadFile = File(...)):
+@app.post("/upload")
+async def upload(file: UploadFile = File(...)):
     filepath = f"sample_data/{file.filename}"
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -32,11 +32,7 @@ async def upload(request: Request, file: UploadFile = File(...)):
     df = load_data(filepath)
     chart_info = generate_charts(df)
 
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "chart_info": chart_info,
-        "uploaded": True
-    })
+    return JSONResponse(content={"charts": chart_info})
 
 @app.get("/download_zip")
 def download_zip():
