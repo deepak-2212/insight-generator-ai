@@ -1,100 +1,122 @@
+import os
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
+import openai
 
-def generate_charts(df, output_folder='outputs'):
-    os.makedirs(output_folder, exist_ok=True)
+# Ensure output folder exists
+os.makedirs("outputs", exist_ok=True)
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def generate_charts(df):
     chart_info = []
 
-    numeric_cols = df.select_dtypes(include='number').columns.tolist()
-    categorical_cols = df.select_dtypes(exclude='number').columns.tolist()
+    numeric_cols = df.select_dtypes(include='number').columns
+    categorical_cols = df.select_dtypes(exclude='number').columns
 
-    # Histogram + Line for each numeric column
     for col in numeric_cols:
         # Histogram
-        plt.figure(figsize=(6, 4))
-        sns.histplot(df[col], kde=True, color='skyblue')
-        plt.title(f"Distribution of {col}")
+        plt.figure(figsize=(8, 6))
+        sns.histplot(df[col].dropna())
+        plt.title(f'Distribution of {col}')
         plt.xlabel(col)
-        plt.ylabel("Frequency")
-        filename = f"{col}_hist.png"
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_folder, filename))
+        plt.ylabel('Frequency')
+        hist_path = f"outputs/{col}_hist.png"
+        plt.savefig(hist_path)
         plt.close()
-        chart_info.append({
-            "title": f"Distribution of {col}",
-            "filename": filename,
-            "desc": f"Histogram showing distribution of '{col}'."
-        })
 
-        # Line Chart (Trend)
-        plt.figure(figsize=(6, 4))
-        sns.lineplot(x=df.index, y=df[col], marker="o", color="orange")
-        plt.title(f"Trend of {col} over rows")
-        plt.xlabel("Row Index")
+        # Line plot (trend over index)
+        plt.figure(figsize=(8, 6))
+        plt.plot(df.index, df[col])
+        plt.title(f'Trend of {col} over Index')
+        plt.xlabel('Index')
         plt.ylabel(col)
-        filename = f"{col}_line.png"
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_folder, filename))
+        line_path = f"outputs/{col}_line.png"
+        plt.savefig(line_path)
         plt.close()
+
+        # GPT-generated description
+        description = generate_gpt_insight(col)
+
         chart_info.append({
-            "title": f"Trend of {col}",
-            "filename": filename,
-            "desc": f"Line chart showing how '{col}' changes over rows."
+            "title": f"{col} Histogram",
+            "file": hist_path,
+            "description": description
+        })
+        chart_info.append({
+            "title": f"{col} Trend Line",
+            "file": line_path,
+            "description": description
         })
 
-    # Pie + Bar for first categorical column
-    if categorical_cols:
-        col = categorical_cols[0]
-        value_counts = df[col].value_counts().head(6)
-
-        # Pie Chart
-        plt.figure(figsize=(6, 6))
-        value_counts.plot.pie(autopct='%1.1f%%')
-        plt.title(f"Pie Chart of {col}")
-        plt.ylabel("")  # Hide Y label for pie
-        filename = f"{col}_pie.png"
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_folder, filename))
-        plt.close()
-        chart_info.append({
-            "title": f"Pie Chart of {col}",
-            "filename": filename,
-            "desc": f"Pie chart showing top 6 values in '{col}'."
-        })
-
-        # Bar Chart
-        plt.figure(figsize=(6, 4))
-        sns.barplot(x=value_counts.index, y=value_counts.values, palette='pastel')
-        plt.title(f"Bar Chart of {col}")
-        plt.xlabel(col)
-        plt.ylabel("Count")
-        filename = f"{col}_bar.png"
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_folder, filename))
-        plt.close()
-        chart_info.append({
-            "title": f"Bar Chart of {col}",
-            "filename": filename,
-            "desc": f"Bar chart showing frequency of top 6 '{col}' values."
-        })
-
-    # Scatter Plot: Use first two numeric columns if available
+    # If 2 numeric cols, make scatter plot
     if len(numeric_cols) >= 2:
-        x_col, y_col = numeric_cols[:2]
-        plt.figure(figsize=(6, 4))
-        sns.scatterplot(x=df[x_col], y=df[y_col], color='green')
-        plt.title(f"Scatter: {x_col} vs {y_col}")
+        x_col = numeric_cols[0]
+        y_col = numeric_cols[1]
+        plt.figure(figsize=(8, 6))
+        sns.scatterplot(x=df[x_col], y=df[y_col])
+        plt.title(f'Scatter: {x_col} vs {y_col}')
         plt.xlabel(x_col)
         plt.ylabel(y_col)
-        filename = f"scatter_{x_col}_vs_{y_col}.png"
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_folder, filename))
+        scatter_path = f"outputs/scatter_{x_col}_vs_{y_col}.png"
+        plt.savefig(scatter_path)
         plt.close()
+
+        description = generate_gpt_insight(f"Scatter: {x_col} vs {y_col}")
+
         chart_info.append({
-            "title": f"Scatter Plot: {x_col} vs {y_col}",
-            "filename": filename,
-            "desc": f"Scatter plot comparing '{x_col}' and '{y_col}'."
+            "title": f"{x_col} vs {y_col} Scatter",
+            "file": scatter_path,
+            "description": description
+        })
+
+    # If categorical + numeric → pie or bar chart
+    if len(categorical_cols) > 0 and len(numeric_cols) > 0:
+        cat_col = categorical_cols[0]
+        num_col = numeric_cols[0]
+        group = df.groupby(cat_col)[num_col].sum()
+
+        # Pie chart
+        plt.figure(figsize=(8, 8))
+        group.plot(kind='pie', autopct='%1.1f%%')
+        plt.title(f'{num_col} by {cat_col} (Pie)')
+        pie_path = f"outputs/{num_col}_by_{cat_col}_pie.png"
+        plt.savefig(pie_path)
+        plt.close()
+
+        # Bar chart
+        plt.figure(figsize=(10, 6))
+        group.plot(kind='bar')
+        plt.title(f'{num_col} by {cat_col} (Bar)')
+        plt.xlabel(cat_col)
+        plt.ylabel(num_col)
+        bar_path = f"outputs/{num_col}_by_{cat_col}_bar.png"
+        plt.savefig(bar_path)
+        plt.close()
+
+        description = generate_gpt_insight(f"{num_col} by {cat_col}")
+
+        chart_info.append({
+            "title": f"{num_col} by {cat_col} Pie",
+            "file": pie_path,
+            "description": description
+        })
+        chart_info.append({
+            "title": f"{num_col} by {cat_col} Bar",
+            "file": bar_path,
+            "description": description
         })
 
     return chart_info
+
+
+def generate_gpt_insight(prompt_topic):
+    prompt = f"Give a short, simple description for a chart about: {prompt_topic}"
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a data analyst assistant."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response.choices[0].message['content']

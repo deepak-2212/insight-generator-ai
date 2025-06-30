@@ -1,19 +1,18 @@
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
 import zipfile
-
 from parser import load_data
 from visualizer import generate_charts
 
 app = FastAPI()
 
-# Allow CORS for your frontend
+# CORS for master frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace * with your frontend domain later
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

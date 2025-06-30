@@ -1,11 +1,10 @@
 import pandas as pd
 
-def load_data(file_path):
-    if file_path.endswith(".csv"):
-        return pd.read_csv(file_path)
-    elif file_path.endswith(".xlsx"):
-        return pd.read_excel(file_path)
-    elif file_path.endswith(".json"):
-        return pd.read_json(file_path)
+def load_data(filepath):
+    if filepath.endswith(".csv"):
+        df = pd.read_csv(filepath)
+    elif filepath.endswith(".xlsx"):
+        df = pd.read_excel(filepath)
     else:
-        raise ValueError("Unsupported file format")
+        raise ValueError("Unsupported file format. Upload CSV or Excel.")
+    return df
