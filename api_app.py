@@ -18,9 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/health")
-def health():
-    return {"status": "Insight Generator AI is running ✅"}
+@app.get("/")
+def root():
+    return {"message": "✅ Insight Generator AI backend is running!"}
 
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
